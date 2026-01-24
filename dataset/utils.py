@@ -2,7 +2,13 @@ from dataset.PatchWSI import WSIPatchClf
 from dataset.PatchWSI import WSIPatchSurv
 from dataset.PatchWSI import WSIPatchSurv_Transfer
 
-
+# @nnam
+# =========================================================================================================================
+# Phục vụ bài toán slide-level classification
+# Input: patient_ids và cfg - file config chứa path 
+# Nó kiểm tra xem có cần mask data để test độ bền vững của model hay ko? - ratio_mask
+# Cuối cùng, gọi WSIPatchClf để khởi tạo dataset
+# ========================================================================================================================= 
 def prepare_clf_dataset(patient_ids:list, cfg, **kws):
     """
     Interface for preparing slide-level classification dataset
@@ -35,6 +41,34 @@ def prepare_clf_dataset(patient_ids:list, cfg, **kws):
     )
     return dataset
 
+# @nnam
+# =========================================================================================================================
+# Chuẩn bị dữ liệu cho Prognostic
+# Bước 1: nhận diện cấu hình cơ bản
+"""
+    path_patch = cfg['path_patch']      # Đường dẫn chứa features gốc (ví dụ từ UNI)
+    mode = cfg['data_mode']             # Thường là 'patch'
+    feat_format = cfg['feat_format']    # Thường là 'pt' hoặc 'h5'
+    meta_data = kws['meta_data']        # Object quản lý nhãn thời gian (t, e) mà ta đã phân tích ở file trước
+"""
+# Bước 2: Quyết định loại dataset (quan trọng cho DA)
+"""
+if 'transfer_learning' in cfg and cfg['transfer_learning'] is True:
+    # ... (Xử lý logic phức tạp cho Transfer Learning)
+    dataset = WSIPatchSurv_Transfer(...)
+else:
+    # ... (Chạy chế độ bình thường)
+    dataset = WSIPatchSurv(...)
+"""
+# code kiểm tra bạn có bật chế độ transfer_learning trong config ko?
+# nhánh else: nếu chỉ train bth trên 1 loại ung thư -> gọi WSIPatchSurv -> load features từ path_patch
+# nhánh if (transfer learning): gọi WSIPatchSurv_Transfer để load cùng lúc nhiều nguồn features:
+# 1. sel_feat_idx: Có chọn lọc feature nào cụ thể không? (Thường dùng để debug hoặc test feature selection).
+# 2. use_self_transfer_feat: Đây là một kỹ thuật nâng cao.
+#   Nếu True: load thêm một loại feature nữa gọi là self_transfer_feat, là features đã được pre-train bằng một task tự giám sát (Self-supervised) trên chính bộ dữ liệu đích.
+#   Mục đích: Tăng cường thông tin cho model.
+# 3. with_patch_feat: Có load kèm feature gốc không? (Để so sánh hoặc để cộng hưởng).
+# ========================================================================================================================= 
 def prepare_surv_dataset(patient_ids:list, cfg, **kws):
     """
     Interface for preparing patient-level survival dataset

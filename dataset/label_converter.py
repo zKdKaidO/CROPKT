@@ -6,6 +6,21 @@ from utils.func_config import check_necessary_columns_in_label_dataframe
 
 EPS = 1e-5
 
+# @nnam
+# =========================================================================================================================
+# Chia thời gian thành các khoảng (bins) -> VD: thay vì đoán "Sống 12 tháng" = "Rơi vào khoảng thgian số 1"
+# Trình tự code xử lí:
+# 1: lọc bệnh nhân: chỉ lấy người đã chết e=1 -> vì sống thì đâu biết tới khi nào?
+# 2: chia theo quantiles (use_quantiles=True) -> ko chia đều mà chia sao cho "số lượng bệnh nhân tử vong trong mỗi khoảng bằng nhau"
+"""
+    Ví dụ logic của code:
+    Nếu num_bins = 4
+    Bin 0: 0 - 6 tháng (Nơi chết nhiều nhất)
+    Bin 1: 6 - 14 tháng
+    Bin 2: 14 - 36 tháng
+    Bin 3: > 36 tháng
+"""
+# =========================================================================================================================
 def calculate_discrete_time_bins(patient_data, column_t='t', column_e='e', num_bins=None, use_quantiles=False, max_event_time=None, max_time=None):
     df_events = patient_data[patient_data[column_e] == 1]
     event_times = df_events[column_t]
@@ -32,6 +47,11 @@ def calculate_discrete_time_bins(patient_data, column_t='t', column_e='e', num_b
 
     return qbins
 
+# @nnam
+# =========================================================================================================================
+# Quản lí MQH: 1 bệnh nhân - Nhiều Slide -> 1 bệnh nhân có thể có nhiều mẫu sinh thiết (nhiều ảnh WSI, nhiều file features)
+# Nhưng họ cũng chỉ có 1 kế cục sống còn về thời gian
+# =========================================================================================================================
 def to_patient_data(df, at_column='patient_id'):
     df_gps = df.groupby(at_column).groups
     df_idx = [i[0] for i in df_gps.values()]
@@ -230,7 +250,12 @@ class MetaSurvData(object):
                 print('\t- ratio of event = {}'.format(sub_pat_data[self.column_e].sum() / len(sub_pat_data)))
         else:
             print("[MetaSurvData] please convert to discrete labels at first.")
-
+# @nnam
+# =========================================================================================================================
+# Cầu nối giữa file CSV và file features UNI
+# Input: patient_id (Ví dụ: "TCGA-02-0001")
+# Output: pathology_id: ['Slide_A.pt', 'Slide_B.pt'] (Danh sách các file features cần load); t: 24.5 (Tháng); e: 1 (Đã mất)
+# =========================================================================================================================
     def collect_info_by_pids(self, pids, target_columns=None, raise_not_found_error=True):
         if target_columns is None:
             target_columns = ['pathology_id', 't', 'e']

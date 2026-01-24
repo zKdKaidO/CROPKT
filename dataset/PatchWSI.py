@@ -13,7 +13,11 @@ from utils.func import sampling_data, random_mask_instance
 from utils.func import agg_dict, fill_placeholder
 from .label_converter import MetaSurvData
 
-
+# @nnam
+# =========================================================================================================================
+# Trong bài toán MIL, 1 bệnh nhân đc coi là 1 Bag bên trong chứa nhiều Instances (viên bi - là các slide hoặc patch)
+# Class WSIPatchSurv có nhiệm vụ gom các Instances của 1 bệnh nhân lại thành 1 cục dữ liệu lớn để nạp vào GPU
+# =========================================================================================================================
 class WSIPatchSurv(Dataset):
     r"""A WSI dataset class for survival prediction tasks (patient-level generally).
 
@@ -119,7 +123,12 @@ class WSIPatchSurv(Dataset):
             pass
             return None
 
- 
+# @nnam
+# =========================================================================================================================
+# Quan trọng cho ý tưởng Domain Adaptation
+# Class này kế thừa từ class trên nhưng có khả năng load 2 loại features cùng lúc
+# Vì khi dùng DA, cần so sánh features của Source và Target, hoặc cần features đã đc align để so sánh với gốc, tính toán Loss...
+# ========================================================================================================================= 
 class WSIPatchSurv_Transfer(WSIPatchSurv):
     r"""A WSI dataset class for survival prediction tasks (patient-level generally).
     Different from `WSIPatchSurv`, this class supports loading transfer data.
