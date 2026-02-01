@@ -11,7 +11,18 @@ from .decoder import MLP
 ##########################################
 # Functions for loading models 
 ##########################################
+# @nnam
+# =========================================================================================================================
+# trái tim của file -> sử dụng kĩ thuật Factory Pattern 
+# Input: đưa vào cái tên (ví dụ: arch='DeepMIL' và network='ABMIL') -> output trả ra đúng model bạn cần
+# =========================================================================================================================
 def load_model(arch:str, **kws):
+    """
+    DeepMIL: nhóm cơ bản -> mô hình MIL tiêu chuẩn
+    ABMIL: train từng expert riêng
+    MaxMIL, MeanMIL: Các phiên bản đơn giản hơn (chỉ lấy Max hoặc Mean của các patch)
+    DSMIL, TransMIL, PatchGCN: Các mô hình hiện đại (SOTA) khác để so sánh
+    """
     if arch == 'DeepMIL':
         assert 'network' in kws, "Please specify a network for a DeepMIL arch."
         network = kws['network']
@@ -46,6 +57,11 @@ def load_model(arch:str, **kws):
         else:
             pass
     elif arch == 'MoETFL':
+        """
+        MoETFL (Nhóm chuyển giao tri thức - Quan trọng nhất):
+        ABMIL-MoE: Đây chính là ROUPKT mà bạn đang quan tâm. Nó gọi hàm Deep_MoE_TFL. 
+        Đây là nơi nó ghép các chuyên gia lại với nhau.
+        """
         assert 'network' in kws, "Please specify a network for a MoETFL arch."
         network = kws['network']
         if network == 'ABMIL-MoE':
@@ -55,6 +71,12 @@ def load_model(arch:str, **kws):
     else:
         raise NotImplementedError("Backbone {} cannot be recognized".format(arch))
 
+# @nnam
+# =========================================================================================================================
+# các hàm ngắn do ABMIL MaxMIL, MeanMIL dùng khung code là class DeepMIL (deepmil.py), đóng vai trò cấu hình sẵn
+# ví dụ: Muốn ABMIL? Nó ép buộc pooling phải là attention; Muốn MaxMIL? Nó ép buộc pooling phải là max
+
+# =========================================================================================================================
 def Deep_MaxMIL(**kws):
     assert 'pooling' in kws and kws['pooling'] == 'max'
     model = DeepMIL(**kws)
@@ -102,11 +124,12 @@ def Deep_MoE_TFL(**kws):
 
 ##########################################
 # Model weight initialization functions
+# Khi một mạng Neural mới được tạo ra, các tham số (weights) của nó ban đầu là các con số ngẫu nhiên
 ##########################################
 @torch.no_grad()
 def init_weights(m):
     if isinstance(m, nn.Linear):
-        nn.init.xavier_uniform_(m.weight)
+        nn.init.xavier_uniform_(m.weight) # chọn số ngẫu nhiên đẹp
         if m.bias is not None:
             m.bias.data.zero_()
 

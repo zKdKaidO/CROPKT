@@ -5,6 +5,13 @@ import torch.nn.functional as F
 
 from model.layers import *
 
+# @nnam
+# =========================================================================================================================
+# DeepMIl là model tiêu chuẩn nhất 
+# Giải quyết bài toán: Làm sao từ hàng nghìn mảnh ảnh nhỏ (instances) suy ra đc kết quả của cả bệnh nhân (bag)
+
+# =========================================================================================================================
+def Deep_MaxMIL(**kws):
 
 EPS = 1e-6
 __all__ = [
