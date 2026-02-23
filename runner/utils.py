@@ -5,7 +5,16 @@ import torch.optim as optim
 from transformers import (get_constant_schedule_with_warmup, 
                          get_linear_schedule_with_warmup, 
                          get_cosine_schedule_with_warmup)
+"""
+Nơi khởi tạo bộ optimizer -> cập nhật trọng số của model sau mỗi bước train 
+def exclude(n, p): return p.ndim < 2 or "bn" in n or "ln" in n or "bias" in n or 'logit_scale' in n
+-> nó tách tham số của model ra 2 nhóm
+- nhóm 1 (bias, layernorm, batchnorm): tham số này thường là vector 1 chiều (p.ndim<2) nên nhạy cảm, ta KHÔNG
+áp dụng weight_decay (phạt nặng) lên chúng, vì sẽ làm model khó học -> gán weight_decay: 0
 
+- nhóm 2 (weights của linear/conv): ma trận trọng số chính (2 chiều chính), áp dụng weight_decay để tránh overfitting
+-> gán weight_decay: args.weight_decay
+"""
 def get_optim(args, model=None, parameters=None):
     def exclude(
         n, p): return p.ndim < 2 or "bn" in n or "ln" in n or "bias" in n or 'logit_scale' in n
@@ -23,7 +32,7 @@ def get_optim(args, model=None, parameters=None):
             {"params": rest_params, "weight_decay": args.weight_decay},
         ]
 
-    if args.opt == "adamW":
+    if args.opt == "adamW": #  adamW ổn định và hội tụ nhanh
         optimizer = optim.AdamW(parameters, lr=args.lr)
     elif args.opt == 'sgd':
         optimizer = optim.SGD(parameters, lr=args.lr, momentum=0.9)
@@ -33,6 +42,12 @@ def get_optim(args, model=None, parameters=None):
         raise NotImplementedError
     return optimizer
 
+"""
+lịch trình tốc độ học
+- warmup: if warmup_steps > 0: -> khi mới train, trọng số lộn xộn, nếu lr cao thì model bị sốc
+-> warmup giúp tăng tốc độ học từ 0 lên max một cách từ từ trong vài epoch đầu để model làm quen
+- scheduler (lịch trình giảm tốc)
+"""
 def get_lr_scheduler(args, optimizer):
     scheduler_name = args.lr_scheduler
     warmup_steps = args.warmup_steps

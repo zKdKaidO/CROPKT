@@ -48,6 +48,9 @@ class SATransferHandler(SAHandler):
     def save_prediction_results(self, data_cltor, path_to_save, **kws):
         save_prediction_surv(data_cltor['uid'], data_cltor['y'], data_cltor['y_hat'], path_to_save, **kws)
 
+    """
+    hàm quyết định xem đợt huấn luyện này sẽ dùng mạng MoE phức tạp hay mạng bình thường
+    """
     def _update_network(self, xs, ys):
         """
         Update network using one batch data
@@ -57,7 +60,14 @@ class SATransferHandler(SAHandler):
         else:
             val_loss, val_preds = self._update_normal_network(xs, ys)
         return val_loss, val_preds
-
+    """
+    luồng train tiêu chuẩn của PyTorch
+    1. Duyệt qua Batch: for i in range(n_sample):
+    2. Cho dữ liệu qua Model: pred = self.net(...) -> Lấy dự đoán
+    3. Xóa Gradient cũ: self.optimizer.zero_grad()
+    4. Tính Loss Tiên lượng: pred_loss = self.calc_objective_loss(bag_preds, bag_label)
+    5. Lan truyền ngược & Cập nhật: pred_loss.backward() và self.optimizer.step()
+    """
     def _update_normal_network(self, xs, ys):
         n_sample = len(xs)
         y_hat = []
@@ -92,7 +102,10 @@ class SATransferHandler(SAHandler):
 
         val_preds = bag_preds.detach().cpu()
         return val_loss, val_preds
+    """
+    Hàm đc gọi khi model là DeepMIL_TFL_MoE
 
+    """
     def _update_moe_network(self, xs, ys):
         n_sample = len(xs)
         y_hat = []
@@ -100,17 +113,18 @@ class SATransferHandler(SAHandler):
         balance_loss, router_z_loss = .0, .0
 
         for i in range(n_sample):
-            X, ext_data = xs[i]
+            X, ext_data = xs[i] # Lấy dữ liệu 1 bệnh nhân
             if self.transfer_with_patch_feat:
                 X = X.cuda()
+                # Cho vào mạng MoE. Chú ý: Mạng MoE trả về 4 thứ
                 pred, router_scores, cur_balance_loss, cur_router_z_loss = self.net(X, ext_data.cuda())
             else:
                 X = X.cuda()
                 pred, router_scores, cur_balance_loss, cur_router_z_loss = self.net(X)
-            y_hat.append(pred)
-            batch_router_scores += router_scores.cpu().squeeze(0)
-            balance_loss += cur_balance_loss
-            router_z_loss += cur_router_z_loss
+            y_hat.append(pred) # Lưu dự đoán sống/chết
+            batch_router_scores += router_scores.cpu().squeeze(0) # Lưu điểm Router để log
+            balance_loss += cur_balance_loss # Cộng dồn Loss phụ 1
+            router_z_loss += cur_router_z_loss # Cộng dồn Loss phụ 2
 
         # 3.1 zero gradients buffer
         self.optimizer.zero_grad()

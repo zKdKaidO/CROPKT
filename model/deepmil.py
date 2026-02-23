@@ -9,7 +9,14 @@ from model.layers import *
 # =========================================================================================================================
 # DeepMIl là model tiêu chuẩn nhất 
 # Giải quyết bài toán: Làm sao từ hàng nghìn mảnh ảnh nhỏ (instances) suy ra đc kết quả của cả bệnh nhân (bag)
-
+# Gồm 3 phần chính:
+# 1. feat_proj (kính lúp)
+# một mạng MLP nhỏ, biến đổi raw feature của UNI (ví dụ từ x chiều) sang 1 không gian mới (y chiều)
+# 2. attention_net (cơ chế chú ý) -> phần quan trọng nhất
+# tính điểm quan trọng cho từng mảnh ảnh (mảnh ung thư -> điểm cao, ảnh mỡ,... -> điểm thấp)
+# nó dùng Attn_Net hoặc Attn_Net_Gated (phiên bản xịn hơn)
+# 3. pred_head (đầu ra quyết định)
+# một lớp Linear cuối cùng, từ đặc trưng tổng hợp của cả bệnh nhân, đưa ra phán đoán cuối cùng (sống/chết,...)
 # =========================================================================================================================
 def Deep_MaxMIL(**kws):
 
@@ -61,17 +68,29 @@ class DeepMIL(nn.Module):
         
         self.pred_head = nn.Linear(dim_emb, num_cls)
 
+    # forward_attention_pooling:  thay vì tính tb cộng, mô hình học cách nghe lời cái quan trọng nhất
+    # lí do ABMIL quan trọng hơn Max Pooling hay Mean Pooling
     def forward_attention_pooling(self, X, attn_mask=None):
-        # X is B x K x C (K is the number of instances)
+        # X is B x K x C (K is the number of instances) 
+        # X: 1000 mảnh ảnh của bệnh nhân, đưa 1000 mảnh vào mạng attention_net để nó chấm điểm.
+        # X: [Batch, K_instances, C_features] (Ví dụ: 1 bệnh nhân, 1000 patches, 512 đặc trưng)
         # num_head = 1 for ABMIL
+        # 1. Tính điểm chú ý (Attention Scores)
         A = self.attention_net(X)  # B x K x num_head 
+        # # A sẽ có kích thước [1, 1000]. Mỗi patch có 1 con số.
         A = torch.transpose(A, -2, -1)  # B x num_head x K
 
         if attn_mask is not None:
             A = A + (1 - attn_mask).unsqueeze(dim=1) * torch.finfo(A.dtype).min
+        # 2. Chuẩn hóa điểm số (Softmax)
         A = F.softmax(A, dim=-1)  # softmax over K (the last dim)
-        M = torch.bmm(A, X).squeeze(dim=1) # B x num_head x C --> B x C
+        # Biến các con số thành xác suất. Tổng tất cả A phải bằng 1.
+        # Patch ung thư: 0.8. Patch thường: 0.001.
 
+        # 3. Tổng hợp (Weighted Sum)
+        M = torch.bmm(A, X).squeeze(dim=1) # B x num_head x C --> B x C
+        # M = 0.8 * Feature_UngThu + 0.001 * Feature_Thuong + ...
+        # M chính là "Bag Representation" (Đặc trưng đại diện cho cả bệnh nhân).
         return M, A.squeeze(dim=1) # B x C, B x K
 
     def forward_slide_representation(self, X):
