@@ -20,10 +20,10 @@ from model.layers import *
 # =========================================================================================================================
 def Deep_MaxMIL(**kws):
 
-EPS = 1e-6
-__all__ = [
-    "DeepMIL", "DSMIL", "TransMIL", "DeepAttnMISL", "PatchGCN"
-]
+    EPS = 1e-6
+    __all__ = [
+        "DeepMIL", "DSMIL", "TransMIL", "DeepAttnMISL", "PatchGCN"
+    ]
 
 
 #####################################################################################
@@ -50,11 +50,11 @@ class DeepMIL(nn.Module):
         assert pred_head in ['default']
 
         self.feat_proj = create_mlp(
-            in_dim=dim_in,
-            hid_dims=[dim_emb] * (num_feat_proj_layers - 1),
-            dropout=drop_rate,
-            out_dim=dim_emb,
-            end_with_fc=False
+            in_dim=dim_in, # input dimension
+            hid_dims=[dim_emb] * (num_feat_proj_layers - 1), # số chiều x số tầng ẩn
+            dropout=drop_rate, # xác suất tắt ngẫu nhiên 1 số neuron để tránh overfitting
+            out_dim=dim_emb, # output dimension
+            end_with_fc=False # True thì cuối cùng sẽ fully connected layer, False thì có thể là Normalization/Activation
         )
         
         if pooling == 'gated_attention':
@@ -66,8 +66,14 @@ class DeepMIL(nn.Module):
 
         self.agg_method = pooling
         
-        self.pred_head = nn.Linear(dim_emb, num_cls)
+        self.pred_head = nn.Linear(dim_emb, num_cls) # chốt xem bệnh nhân có bệnh ko?
 
+    """
+    Tổ hợp lồi (Convex Combination)
+    K thực thể h1, h2,..., hK; tìm vector đại diện z cho cả túi đó:
+    z = \sum_{k=1}^K (aK.hK)
+    aK là trọng số của thực thể thứ K; hK là vector đặc trưng thực thể K đã qua MLP ở hàm trên
+    """
     # forward_attention_pooling:  thay vì tính tb cộng, mô hình học cách nghe lời cái quan trọng nhất
     # lí do ABMIL quan trọng hơn Max Pooling hay Mean Pooling
     def forward_attention_pooling(self, X, attn_mask=None):
@@ -75,20 +81,21 @@ class DeepMIL(nn.Module):
         # X: 1000 mảnh ảnh của bệnh nhân, đưa 1000 mảnh vào mạng attention_net để nó chấm điểm.
         # X: [Batch, K_instances, C_features] (Ví dụ: 1 bệnh nhân, 1000 patches, 512 đặc trưng)
         # num_head = 1 for ABMIL
-        # 1. Tính điểm chú ý (Attention Scores)
+        # 1. Tính điểm chú ý (Attention Scores) -> mảnh nghi ngờ điểm cao; mảnh nền điểm thấp...
         A = self.attention_net(X)  # B x K x num_head 
         # # A sẽ có kích thước [1, 1000]. Mỗi patch có 1 con số.
         A = torch.transpose(A, -2, -1)  # B x num_head x K
+        # mục đích: [B,1,K] x [B,K,C] -> [B,1,C]
 
         if attn_mask is not None:
             A = A + (1 - attn_mask).unsqueeze(dim=1) * torch.finfo(A.dtype).min
         # 2. Chuẩn hóa điểm số (Softmax)
         A = F.softmax(A, dim=-1)  # softmax over K (the last dim)
         # Biến các con số thành xác suất. Tổng tất cả A phải bằng 1.
-        # Patch ung thư: 0.8. Patch thường: 0.001.
+        # Patch ung thư: 0.8. Patch thường: 0.001.nhu
 
         # 3. Tổng hợp (Weighted Sum)
-        M = torch.bmm(A, X).squeeze(dim=1) # B x num_head x C --> B x C
+        M = torch.bmm(A, X).squeeze(dim=1) # B x num_head x C --(squeeze)--> B x C
         # M = 0.8 * Feature_UngThu + 0.001 * Feature_Thuong + ...
         # M chính là "Bag Representation" (Đặc trưng đại diện cho cả bệnh nhân).
         return M, A.squeeze(dim=1) # B x C, B x K
