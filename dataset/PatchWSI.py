@@ -70,6 +70,7 @@ class WSIPatchSurv(Dataset):
         return self.pids, self.pid2info
 
     def get_feat_read_path(self, pid, sid):
+        cur_read_path = self.read_path # Gán mặc định trước
         if "{project}" in self.read_path:
             cur_read_path = self.read_path.replace("{project}", self.pid2info[pid]['project'])
         return osp.join(cur_read_path, sid + '.' + self.read_format)
@@ -202,8 +203,26 @@ class WSIPatchSurv_Transfer(WSIPatchSurv):
                 feats = self.read_patch_data_from_patient(pid, sids)
             else:
                 feats = torch.Tensor([0])
+            
+            # ==========================================================
+            # @nnam: THÊM NHÃN MIỀN (DOMAIN LABEL) CHO ÔNG CẢNH SÁT
+            # ==========================================================
+            # Cách xác định: Dựa vào 'dataset_id' trong bảng meta_data.
+            # Giả định: Source dataset (TCGA-LUAD/LUSC) có dataset_id = 0
+            #           Target dataset (TCGA-UCEC/Bệnh hiếm) có dataset_id = 1
+            # Nếu info['dataset_id'] không tồn tại, ta tạm gán bằng 0.
+            if 'dataset_id' in info:
+                domain_label = torch.Tensor([info['dataset_id']]).float()
+            else:
+                # Nếu không có thông tin dataset, mặc định coi là Source (0)
+                domain_label = torch.Tensor([0.0]).float()
+            
+            # Gói chung feats (đặc trưng gốc) và domain_label thành 1 tuple/list
+            # để dễ dàng truyền qua DataLoader mà không phá vỡ cấu trúc cũ.
+            extra_data = (feats, domain_label)
+            # ==========================================================
 
-            return index, (transfer_feat, feats), label
+            return index, (transfer_feat, extra_data), label
 
         else:
             pass

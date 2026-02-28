@@ -132,7 +132,7 @@ class SAHandler(BaseHandler):
             idx_collector.append(data_idx)
 
             # in a mini-batch
-            if i_batch % bp_every_batch == 0: # drop_last_batch = True
+            if i_batch % bp_every_batch == 0 or i_batch == len(loop): # drop_last_batch = True
                 # 2. update network
                 batch_loss, batch_pred = self._update_network(x_collector, y_collector)
                 all_raw_pred.append(batch_pred)

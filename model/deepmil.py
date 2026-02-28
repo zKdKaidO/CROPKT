@@ -20,10 +20,10 @@ from model.layers import *
 # =========================================================================================================================
 def Deep_MaxMIL(**kws):
 
-EPS = 1e-6
-__all__ = [
-    "DeepMIL", "DSMIL", "TransMIL", "DeepAttnMISL", "PatchGCN"
-]
+    EPS = 1e-6
+    __all__ = [
+        "DeepMIL", "DSMIL", "TransMIL", "DeepAttnMISL", "PatchGCN"
+    ]
 
 
 #####################################################################################

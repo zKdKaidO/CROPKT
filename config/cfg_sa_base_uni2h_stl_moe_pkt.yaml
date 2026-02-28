@@ -10,29 +10,29 @@ eval_training_loader_per_epoch: False
 ckpt_for_eval: last # last / best
 
 # data loading
-dataset_name: ['tcga_brca']
-path_patch: /path/to/data/TCGA-{project}
+dataset_name: tcga_chol
+path_patch: ./sample_data/features
 path_coord: null
-path_table: ./data_split/stratified-5foldcv/{dataset}/{dataset}_survival.csv
+path_table: ./sample_data/labels/tcga_chol_survival.csv
 data_mode: patch
 path_cluster: null
-feat_format: pt
+feat_format: h5
 time_format: interval # 'origin', 'ratio', 'quantile', 'interval'
 time_bins: 32 # Keep it the same for all MTL & STL experiments; lead to uniform cutoffs like [0, 365*1, ..., 365*32]
 time_event_max: 11680 # Keep it the same for all MTL & STL experiments; lead to uniform cutoffs like [0, 365*1, ..., 365*32]
-data_split_path: ./data_split/stratified-5foldcv/{dataset}/splits_{fold}.csv
-data_split_fold: [0, 1, 2, 3, 4]
+data_split_path: ./sample_data/labels/splits_{fold}.csv
+data_split_fold: 0
 
 # transfer learning
 transfer_learning: True
 transfer_with_patch_feat: True
 transfer_fine_tuning: False # if True, load the weight of `pred_head` of source models from `transfer_load_ckpt_path`
 transfer_load_ckpt_path: null # path to load trained models
-transfer_path_feat: /path/to/transfer-feats/target_{dataset}/source_all-fold_{source_fold}
+transfer_path_feat: ./sample_data/transfer_features
 transfer_feat_type: ['all_tf'] # ['pos_tf', 'all_tf']
 transfer_source_fold: [0]
 transfer_self_feat: True
-transfer_path_self_feat: /path/to/transfer-feats/target_{dataset}/source_{dataset}-fold_{fold}
+transfer_path_self_feat: ./sample_data/transfer_features
 
 # network architecture
 arch: MoETFL # DeepMIL / Decoder / AuxTFL / MoETFL
@@ -50,7 +50,7 @@ moetfl_drop_rate: 0.25
 moetfl_pooling: gated_attention # only for DeepMIL, max / mean / attention / gated_attention
 moetfl_expert_size: null # automatically filled by len(list_transfer_feats)
 moetfl_expert_network: 'MLP' # Identity / MLP
-moetfl_expert_topk: 5 # 5 by default
+moetfl_expert_topk: 1 # 5 by default
 moetfl_noise_gates: False # False by default
 
 # training loss
@@ -70,9 +70,9 @@ opt_lr: 0.0001
 opt_weight_decay: 0.00001
 
 # training
-epochs: 20
+epochs: 2
 batch_size: 1
-bp_every_batch: 16 # 16 by default
+bp_every_batch: 1 # 16 by default
 num_workers: 4
 
 # LR Scheduler
