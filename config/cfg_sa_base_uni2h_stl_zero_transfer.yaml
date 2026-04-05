@@ -9,42 +9,46 @@ save_prediction: True
 eval_training_loader_per_epoch: False
 ckpt_for_eval: last # last / best
 
-# data loading
-dataset_name: ['tcga_brca']
-path_patch: /path/to/data/TCGA-{project}
+# ---------------------------------------------
+# [UPDATE] DATA LOADING FOR ZERO-SHOT
+# ---------------------------------------------
+zero_shot_mode: True # Cờ mới để báo cho code biết đây là test zero-shot
+dataset_name: ['thym']  # ['uvm', 'chol', 'acc', 'dlbc', 'meso', 'ov', 'paad', 'pcpg', 'tgct', 'ucs', 'thym', 'prad', 'thca']
+path_patch: A:/CROPKT_DATASET/{dataset}/TCGA_{dataset}
 path_coord: null
-path_table: ./data_split/stratified-5foldcv/{dataset}/{dataset}_survival.csv
+path_table: A:/CROPKT_DATASET/{dataset}/CSV/tcga_{dataset}_survival.csv
 data_mode: patch
 path_cluster: null
-feat_format: pt
-time_format: interval # 'origin', 'ratio', 'quantile', 'interval'
-time_bins: 32 # Keep it the same for all MTL & STL experiments; lead to uniform cutoffs like [0, 365*1, ..., 365*32]
-time_event_max: 11680 # Keep it the same for all MTL & STL experiments; lead to uniform cutoffs like [0, 365*1, ..., 365*32]
-data_split_path: ./data_split/stratified-5foldcv/{dataset}/splits_{fold}.csv
-data_split_fold: [0, 1, 2, 3, 4]
+feat_format: h5
+time_format: interval 
+time_bins: 32 
+time_event_max: 11680 
+data_split_path: A:/CROPKT_DATASET/{dataset}/CSV/splits_{fold}.csv
+data_split_fold: [0]
+# ---------------------------------------------
 
 # network architecture
-arch: DeepMIL # DeepMIL
+arch: DeepMIL 
 init_wt: False
-net_output_converter: sigmoid # use to convert prediction
+net_output_converter: sigmoid 
 
 # DeepMIL setttings
 deepmil_network: ABMIL
-deepmil_dim_in: 1536 # UNI2h = 1536 / UNI = 768
+deepmil_dim_in: 1536 
 deepmil_dim_emb: 512
-deepmil_num_cls: 32 # should be equal to `time_bins`
+deepmil_num_cls: 32 
 deepmil_dim_attn: 384
 deepmil_num_feat_proj_layers: 0
 deepmil_drop_rate: 0.25
-deepmil_pooling: gated_attention # only for DeepMIL, max / mean / attention / gated_attention
+deepmil_pooling: gated_attention 
 
 # training loss
-loss_type: SurvMLE # use XXX-XXX-XXX to configure multi-loss
+loss_type: SurvMLE 
 loss_survmle_weight: 1.0
 loss_survmle_alpha: 0.5
 
 # evaluator
-evaluator: NLL # Reg / NLL / Cox / VL
+evaluator: NLL 
 evaluator_backend: default
 
 # optimizer
@@ -55,7 +59,7 @@ opt_weight_decay: 0.00001
 # training
 epochs: 20
 batch_size: 1
-bp_every_batch: 16 # 16 by default
+bp_every_batch: 16 
 num_workers: 4
 
 # LR Scheduler
@@ -70,15 +74,17 @@ es_patience: 20
 es_warmup: 0
 es_verbose: True
 es_start_epoch: 0
-monitor_metrics: loss # loss / c_index
+monitor_metrics: loss 
 
-# In a test mode
+# ---------------------------------------------
+# ZERO-SHOT TESTING SETTINGS
+# ---------------------------------------------
 test: True
-test_wandb_prj: Project-Zero-Transfer # wandb project name of test mode
-test_save_path: ./result/project-zero-transfer/abmil_gat_attn-MLE_YEAR # path to save test results
-test_split: test # dataset name you want to test, which should be a key in the npz file for data split
-test_source_dataset_name: ['tcga_blca', 'tcga_brca', 'tcga_cesc', 'tcga_coadread', 'tcga_gbmlgg', 'tcga_hnsc', 'tcga_kipan', 'tcga_lihc', 'tcga_lung', 'tcga_sarc', 'tcga_skcm', 'tcga_stes', 'tcga_ucec']
+test_wandb_prj: Project-Zero-Transfer 
+test_save_path: A:/CROPKT/test_results_1/zero_transfer 
+test_split: test 
+test_source_dataset_name: ['gbmlgg', 'hnsc', 'kipan', 'lihc', 'lung', 'sarc', 'skcm', 'stes', 'ucec'] # Các model pre-trained từ bệnh này
 test_source_data_split_fold: [0, 1, 2, 3, 4]
-test_load_ckpt_path: ./result/project/abmil_gat_attn-MLE_YEAR-data_{source_dataset}-fold_{source_fold} # path to load trained models
+test_load_ckpt_path: A:/CROPKT/saved_experts/{source_dataset}_expert-data_tcga_{source_dataset}-fold_{source_fold}
 test_save_wsi_representation: True
-test_save_wsi_representation_path: /path/to/transfer-feats-latest/target_{dataset}/source_{source_dataset}-fold_{source_fold}
+test_save_wsi_representation_path: A:/CROPKT/transfer_features_1/target_{dataset}/source_{source_dataset}-fold_{source_fold}

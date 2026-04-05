@@ -108,6 +108,7 @@ class BaseHandler(object):
         pass
         print("[setup] finished argument checking.")
 
+    # đọc file CSV để lấy danh sách ID chia theo tập train/val/test
     @staticmethod
     def func_load_data_split(cfg, key=None, **kws):
         if key is None:
@@ -128,6 +129,7 @@ class BaseHandler(object):
         print("[setup] there is no meta data to load.")
         return None
 
+    # khởi tạo cấu trúc mạng Neural dựa vào config và tạo trọng số ngẫu nhiên nếu được yêu cầu
     @staticmethod
     def func_load_model(cfg):
         arch = cfg['arch']
@@ -137,6 +139,7 @@ class BaseHandler(object):
             model.apply(general_init_weight)
         return model
 
+    # khởi tạo hàm tính loss 
     @staticmethod
     def func_load_loss(cfg):
         loss_names = parse_str_dims(cfg['loss_type'], dtype=str)
@@ -178,6 +181,7 @@ class BaseHandler(object):
         steplr = get_lr_scheduler(cfg_lr_scheduler, optimizer)
         return steplr
 
+    # khởi tọa các metrics như AUC, c-index, F1-score
     @staticmethod
     def func_load_evaluator(cfg, meta_data=None):
         assert cfg['evaluator'] in ['Binary', 'Multi-class']

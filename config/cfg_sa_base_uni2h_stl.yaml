@@ -1,27 +1,29 @@
+# Train separate expert 
+# python main.py --config ./config/cfg_sa_base_uni2h_stl.yaml --multi_run
 task: sa
 cuda_id: 0
 seed: 42
 
-wandb_dir: /path/to/repo
+wandb_dir: A:/CROPKT/wandb_logs
 wandb_prj: project
-save_path: ./result/project/abmil_gat_attn-MLE_YEAR
+save_path: A:/CROPKT/saved_experts/lung_expert
 save_prediction: True
 eval_training_loader_per_epoch: False
 ckpt_for_eval: last # last / best
 
 # data loading
-dataset_name: ['tcga_brca']
-path_patch: /path/to/data/TCGA-{project}
+dataset_name: ['tcga_lung']
+path_patch: A:\CROPKT_DATASET\LUNG\TCGA_LUNG
 path_coord: null
-path_table: ./data_split/stratified-5foldcv/{dataset}/{dataset}_survival.csv
+path_table: A:\CROPKT_DATASET\LUNG\CSV\tcga_lung_survival.csv
 data_mode: patch
 path_cluster: null
-feat_format: pt
+feat_format: h5
 time_format: interval # 'origin', 'ratio', 'quantile', 'interval'
 time_bins: 32 # Keep it the same for all MTL & STL experiments; lead to uniform cutoffs like [0, 365*1, ..., 365*32]
 time_event_max: 11680 # Keep it the same for all MTL & STL experiments; lead to uniform cutoffs like [0, 365*1, ..., 365*32]
-data_split_path: ./data_split/stratified-5foldcv/{dataset}/splits_{fold}.csv
-data_split_fold: [0, 1, 2, 3, 4]
+data_split_path: A:\CROPKT_DATASET\LUNG\CSV\splits_{fold}.csv
+data_split_fold: [4]
 
 # network architecture
 arch: DeepMIL # DeepMIL
@@ -56,7 +58,7 @@ opt_weight_decay: 0.00001
 epochs: 20
 batch_size: 1
 bp_every_batch: 16 # 16 by default
-num_workers: 4
+num_workers: 8
 
 # LR Scheduler
 lrs: True

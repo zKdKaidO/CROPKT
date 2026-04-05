@@ -6,7 +6,7 @@ ckpt_for_eval            -->   last
 cuda_id                  -->   0
 data_mode                -->   patch
 data_split_fold          -->   0
-data_split_path          -->   ./sample_data/labels/splits_0.csv
+data_split_path          -->   A:/sample_data/labels/splits_0.csv
 dataset_name             -->   tcga_chol
 epochs                   -->   2
 es                       -->   False
@@ -48,8 +48,8 @@ opt_name                 -->   adamW
 opt_weight_decay         -->   1e-05
 path_cluster             -->   None
 path_coord               -->   None
-path_patch               -->   ./sample_data/features
-path_table               -->   ./sample_data/labels/tcga_chol_survival.csv
+path_patch               -->   A:/sample_data/features
+path_table               -->   A:/sample_data/labels/tcga_chol_survival.csv
 save_path                -->   ./result/project-moe-pkt/TFL-MoE-abmil_gat_attn-MLE_YEAR
 save_prediction          -->   True
 seed                     -->   42
@@ -63,11 +63,11 @@ transfer_feat_type       -->   ['all_tf']
 transfer_fine_tuning     -->   False
 transfer_learning        -->   True
 transfer_load_ckpt_path  -->   None
-transfer_path_feat       -->   ./sample_data/transfer_features
-transfer_path_self_feat  -->   ./sample_data/transfer_features
+transfer_path_feat       -->   A:/sample_data/transfer_features
+transfer_path_self_feat  -->   A:/sample_data/transfer_features
 transfer_self_feat       -->   True
 transfer_source_dataset  -->   all
-transfer_source_fold     -->   [0]
+transfer_source_fold     -->   0
 transfer_with_patch_feat -->   True
 wandb_dir                -->   /path/to/repo
 wandb_prj                -->   project-moe-pkt

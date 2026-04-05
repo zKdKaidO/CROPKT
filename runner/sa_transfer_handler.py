@@ -117,7 +117,7 @@ class SATransferHandler(SAHandler):
     """
     def _update_moe_network(self, xs, ys):
         n_sample = len(xs)
-        all_raw_pred = []
+        y_hat = []
         batch_router_scores = torch.zeros(self.net.n_experts)
         balance_loss, router_z_loss = .0, .0
         all_domain_preds = [] # MỚI THÊM: Mảng chứa dự đoán của cảnh sát
@@ -126,16 +126,14 @@ class SATransferHandler(SAHandler):
         for i in range(n_sample):
             # --- [SỬA ĐOẠN NÀY] ---
             # xs[i] bây giờ trả về: (transfer_feat, (original_feats, domain_label))
-            X, packed_extra = xs[i] 
-            
-            # Tách gói dữ liệu ra
-            original_feats, domain_label = packed_extra
-            
+            X, (original_feats, domain_label) = xs[i] 
             # Lưu nhãn miền thật lại để tí nữa tính Loss
             all_domain_targets.append(domain_label)
             # ----------------------
-
-            if self.transfer_with_patch_feat:
+            # có 2 nguồn dữ liệu:
+            # - patch features (dữ liệu thực tế): hàng nghìn mảnh ảnh nhỏ cắt ra từ bệnh nhân 
+            # - transfer features (kiến thức vay mượn): những đặc trưng đã đc experts đúc rút sẵn từ các loại ung thư khác
+            if self.transfer_with_patch_feat: # nhìn vào ảnh để biết khó/dễ, từ đó quyết định hỏi chuyên gia nào cho đúng 
                 X = X.cuda()
                 # Chỉ đưa original_feats vào model (không đưa domain_label vào đây gây lỗi)
                 pred, router_scores, cur_balance_loss, cur_router_z_loss, domain_preds = self.net(X, original_feats.cuda())
@@ -145,7 +143,7 @@ class SATransferHandler(SAHandler):
             
             all_domain_preds.append(domain_preds) # MỚI THÊM: Gom kết quả lại
 
-            all_raw_pred.append(pred) # Lưu dự đoán sống/chết
+            y_hat.append(pred) # Lưu dự đoán sống/chết
             batch_router_scores += router_scores.cpu().squeeze(0) # Lưu điểm Router để log
             balance_loss += cur_balance_loss # Cộng dồn Loss phụ 1
             router_z_loss += cur_router_z_loss # Cộng dồn Loss phụ 2
@@ -154,7 +152,7 @@ class SATransferHandler(SAHandler):
         self.optimizer.zero_grad()
 
         # 3.2 loss
-        bag_preds = torch.cat(all_raw_pred, dim=0) # [B, num_cls]
+        bag_preds = torch.cat(y_hat, dim=0) # [B, num_cls]
         bag_label = torch.cat(ys, dim=0) # [B, 2]
         pred_loss = self.calc_objective_loss(bag_preds, bag_label)
         batch_router_scores = batch_router_scores / n_sample
@@ -166,7 +164,7 @@ class SATransferHandler(SAHandler):
         wandb.log({'train/aux_loss': aux_loss.item()})
 
         # --- BẮT ĐẦU PHẦN DOMAIN ADAPTATION ---
-        bag_domain_preds = torch.cat(all_domain_preds, dim=0)
+        bag_domain_preds = torch.cat(all_domain_preds, dim=0) # xếp chồng thành 1 cột dọc
         
         # TẠO NHÃN MIỀN (DOMAIN LABELS):
         # GIẢ ĐỊNH TẠM THỜI: Toàn bộ batch này là Source (Nhãn 1)
@@ -174,6 +172,8 @@ class SATransferHandler(SAHandler):
         target_domain = torch.cat(all_domain_targets, dim=0).to(bag_domain_preds.device)
         
         # Tính Domain Loss (L_d)
+        # BCE: Ld = - [y.log(y_hat) + (1-y).log(1-y_hat)]
+        # y_hat: xác suất mà cảnh sát đoán; y: nhãn thật
         domain_loss = self.domain_criterion(bag_domain_preds, target_domain)
         
         # Tính Lambda (Lịch trình thích nghi)

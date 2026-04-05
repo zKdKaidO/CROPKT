@@ -11,16 +11,16 @@ ckpt_for_eval: last # last / best
 
 # data loading
 dataset_name: tcga_chol
-path_patch: ./sample_data/features
+path_patch: A:/sample_data/features
 path_coord: null
-path_table: ./sample_data/labels/tcga_chol_survival.csv
+path_table: A:/sample_data/labels/tcga_chol_survival.csv
 data_mode: patch
 path_cluster: null
 feat_format: h5
 time_format: interval # 'origin', 'ratio', 'quantile', 'interval'
 time_bins: 32 # Keep it the same for all MTL & STL experiments; lead to uniform cutoffs like [0, 365*1, ..., 365*32]
 time_event_max: 11680 # Keep it the same for all MTL & STL experiments; lead to uniform cutoffs like [0, 365*1, ..., 365*32]
-data_split_path: ./sample_data/labels/splits_{fold}.csv
+data_split_path: A:/sample_data/labels/splits_{fold}.csv
 data_split_fold: 0
 
 # transfer learning
@@ -28,11 +28,11 @@ transfer_learning: True
 transfer_with_patch_feat: True
 transfer_fine_tuning: False # if True, load the weight of `pred_head` of source models from `transfer_load_ckpt_path`
 transfer_load_ckpt_path: null # path to load trained models
-transfer_path_feat: ./sample_data/transfer_features
+transfer_path_feat: A:/sample_data/transfer_features
 transfer_feat_type: ['all_tf'] # ['pos_tf', 'all_tf']
-transfer_source_fold: [0]
+transfer_source_fold: 0
 transfer_self_feat: True
-transfer_path_self_feat: ./sample_data/transfer_features
+transfer_path_self_feat: A:/sample_data/transfer_features
 
 # network architecture
 arch: MoETFL # DeepMIL / Decoder / AuxTFL / MoETFL

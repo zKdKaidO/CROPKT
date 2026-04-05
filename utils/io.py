@@ -27,7 +27,7 @@ def load_pkl(filename):
     return file
 
 def load_config_from_yaml(config_path):
-    with open(config_path, "r") as setting:
+    with open(config_path, "r", encoding='utf-8') as setting:
         config = yaml.load(setting, Loader=yaml.FullLoader)
     return config
 

@@ -20,24 +20,35 @@ def get_cmd_args():
     args = vars(parser.parse_args())
     return args
 
-def main(handler, config):
-    if not is_valid_run_cfg(config):
+def main(handler, config): # luồng chạy ko có multi_run
+    if not is_valid_run_cfg(config): 
         print("[Warning] skipped this run with config:", config)
         return
 
     model = handler(config)
     if config['test']:
-        metrics = model.exec_test()
+        metrics = model.exec_test() # test=True thì chỉ đánh giá 'zeroshot' 
     else:
-        metrics = model.exec()
+        metrics = model.exec() # test=False thì huấn luyện từ đầu
     print('[INFO] Metrics:', metrics)
 
 def multi_run_main(handler, config, sleep=0):
     hyperparams = []
-    for k, v in config.items():
+    """
+    Quét qua file config -> key nào là list thì nó nhét tên key đó vào hyperparams
+    """
+    for k, v in config.items(): 
         if isinstance(v, list):
             hyperparams.append(k)
+    """
+    args_grid: từ 1 config với các tham số dạng list -> hình thành nhiều config dictionary. Ví dụ:
 
+    dataset_name: ['a', 'b']
+    data_split_fold: [0, 1]
+    -> ['a', 0], ['a', 1], ['b', 0], ['b', 1]
+
+
+    """
     if config['data_split_fold'] is None:
         configs = args_grid(config, loop_preference=['dataset_name'])
     else:
@@ -45,6 +56,7 @@ def multi_run_main(handler, config, sleep=0):
 
     for cur_cfg in configs:
         print('\n')
+        # tạo ra nơi thư mục phù hợp với các file config dictionary
         for k in hyperparams:
             abbr_key, abbr_value = convert_to_abbr(k), convert_to_abbr(cur_cfg[k])
             
@@ -73,8 +85,8 @@ def multi_run_main(handler, config, sleep=0):
         time.sleep(sleep)
 
 if __name__ == '__main__':
-    cfg = get_cmd_args()
-    config = load_config_from_yaml(cfg['config'])
+    cfg = get_cmd_args() # lấy lệnh vừa gõ
+    config = load_config_from_yaml(cfg['config']) # đọc file yaml
     print_config(config)
     
     if cfg['handler'] == 'CLF':

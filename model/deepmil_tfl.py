@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .discriminator import DomainDiscriminator
 from model.layers import *
 from utils.func import gumbel_noise
 
@@ -137,10 +136,6 @@ class DeepMIL_TFL_MoE(nn.Module):
             self.attention_net = None
 
         self.router = nn.Linear(dim_emb, self.n_experts, bias=False)
-        # === [THÊM CẢNH SÁT VÀO ĐÂY] ===
-        # Vì router nhận đầu vào là dim_emb, Cảnh sát cũng nhận đầu vào là dim_emb
-        self.domain_discriminator = DomainDiscriminator(input_dim=dim_emb)
-        # ================================
 
         # MoE
         self.top_k = min(self.n_experts, expert_topk) # 3 by default
@@ -204,13 +199,6 @@ class DeepMIL_TFL_MoE(nn.Module):
             out_feat, attn = slide_results
         else:
             out_feat = slide_results
-        
-        # --- [THÊM ĐOẠN NÀY: Chạy Cảnh sát] ---
-        domain_preds = None
-        if self.training:
-            # Cho đặc trưng đi qua Cảnh sát để phân loại miền
-            domain_preds = self.domain_discriminator(out_feat)
-        # -------------------------------------
         router_logits = self.router(out_feat) # [B, num_experts]
 
         # add noise into routing scores:
@@ -263,6 +251,6 @@ class DeepMIL_TFL_MoE(nn.Module):
             return logit, probs.detach() # B x num_cls, B x num_experts
 
         if self.training:
-            return logit, probs.detach(), balance_loss, router_z_loss, domain_preds
+            return logit, probs.detach(), balance_loss, router_z_loss
         else:
             return logit
