@@ -101,14 +101,6 @@ class SATransferHandler(SAHandler):
 
         for i in range(n_sample):
             X, ext_data = xs[i]
-            if isinstance(ext_data, list):
-                for i, t in enumerate(ext_data):
-                    if t.shape != ext_data[0].shape:
-                        print(f"[CẢNH BÁO LỚN] Chuyên gia {i} bị sai kích thước: {t.shape} (đáng lẽ phải là {ext_data[0].shape})")
-                ext_data_tensor = torch.stack(ext_data, dim=1).cuda() 
-            else:
-                ext_data_tensor = ext_data.cuda()
-
             if self.transfer_with_patch_feat:
                 X = X.cuda()
                 pred, router_scores, cur_balance_loss, cur_router_z_loss = self.net(X, ext_data.cuda())

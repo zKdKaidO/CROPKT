@@ -13,11 +13,7 @@ from utils.func import sampling_data, random_mask_instance
 from utils.func import agg_dict, fill_placeholder
 from .label_converter import MetaSurvData
 
-# @nnam
-# =========================================================================================================================
-# Trong bài toán MIL, 1 bệnh nhân đc coi là 1 Bag bên trong chứa nhiều Instances (viên bi - là các slide hoặc patch)
-# Class WSIPatchSurv có nhiệm vụ gom các Instances của 1 bệnh nhân lại thành 1 cục dữ liệu lớn để nạp vào GPU
-# =========================================================================================================================
+
 class WSIPatchSurv(Dataset):
     r"""A WSI dataset class for survival prediction tasks (patient-level generally).
 
@@ -70,9 +66,11 @@ class WSIPatchSurv(Dataset):
         return self.pids, self.pid2info
 
     def get_feat_read_path(self, pid, sid):
-        cur_read_path = self.read_path # Gán mặc định trước
+        cur_read_path = self.read_path 
+        
         if "{project}" in self.read_path:
             cur_read_path = self.read_path.replace("{project}", self.pid2info[pid]['project'])
+            
         return osp.join(cur_read_path, sid + '.' + self.read_format)
 
     def read_patch_data_from_patient(self, pid, sids):
@@ -124,12 +122,7 @@ class WSIPatchSurv(Dataset):
             pass
             return None
 
-# @nnam
-# =========================================================================================================================
-# Quan trọng cho ý tưởng Domain Adaptation
-# Class này kế thừa từ class trên nhưng có khả năng load 2 loại features cùng lúc
-# Vì khi dùng DA, cần so sánh features của Source và Target, hoặc cần features đã đc align để so sánh với gốc, tính toán Loss...
-# ========================================================================================================================= 
+ 
 class WSIPatchSurv_Transfer(WSIPatchSurv):
     r"""A WSI dataset class for survival prediction tasks (patient-level generally).
     Different from `WSIPatchSurv`, this class supports loading transfer data.
@@ -203,26 +196,8 @@ class WSIPatchSurv_Transfer(WSIPatchSurv):
                 feats = self.read_patch_data_from_patient(pid, sids)
             else:
                 feats = torch.Tensor([0])
-            
-            # ==========================================================
-            # @nnam: THÊM NHÃN MIỀN (DOMAIN LABEL) CHO ÔNG CẢNH SÁT
-            # ==========================================================
-            # Cách xác định: Dựa vào 'dataset_id' trong bảng meta_data.
-            # Giả định: Source dataset (TCGA-LUAD/LUSC) có dataset_id = 0
-            #           Target dataset (TCGA-UCEC/Bệnh hiếm) có dataset_id = 1
-            # Nếu info['dataset_id'] không tồn tại, ta tạm gán bằng 0.
-            if 'dataset_id' in info:
-                domain_label = torch.Tensor([info['dataset_id']]).float()
-            else:
-                # Nếu không có thông tin dataset, mặc định coi là Source (0)
-                domain_label = torch.Tensor([0.0]).float()
-            
-            # Gói chung feats (đặc trưng gốc) và domain_label thành 1 tuple/list
-            # để dễ dàng truyền qua DataLoader mà không phá vỡ cấu trúc cũ.
-            extra_data = (feats, domain_label)
-            # ==========================================================
 
-            return index, (transfer_feat, extra_data), label
+            return index, (transfer_feat, feats), label
 
         else:
             pass

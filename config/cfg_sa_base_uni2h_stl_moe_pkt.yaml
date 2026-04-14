@@ -29,7 +29,7 @@ transfer_learning: True
 transfer_with_patch_feat: True
 transfer_fine_tuning: False # if True, load the weight of `pred_head` of source models from `transfer_load_ckpt_path`
 transfer_load_ckpt_path: A:/CROPKT/saved_experts_fold0 # path to load trained models
-transfer_path_feat: A:/CROPKT/transfer_features_1/target_{dataset}/source_all-fold_{source_fold}
+transfer_path_feat: A:/CROPKT/transfer_features_1/target_{dataset}/source_all-fold_0
 transfer_feat_type: "all_tf" # ['pos_tf', 'all_tf']
 transfer_source_fold: 0
 transfer_self_feat: False
