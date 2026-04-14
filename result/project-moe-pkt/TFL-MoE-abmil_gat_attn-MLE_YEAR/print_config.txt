@@ -6,9 +6,9 @@ ckpt_for_eval            -->   last
 cuda_id                  -->   0
 data_mode                -->   patch
 data_split_fold          -->   0
-data_split_path          -->   A:/sample_data/labels/splits_0.csv
-dataset_name             -->   tcga_chol
-epochs                   -->   2
+data_split_path          -->   F:\TEMP\thym\CSV\splits_0.csv
+dataset_name             -->   thym
+epochs                   -->   20
 es                       -->   False
 es_patience              -->   20
 es_start_epoch           -->   0
@@ -33,8 +33,8 @@ moetfl_dim_emb           -->   512
 moetfl_dim_in            -->   1536
 moetfl_drop_rate         -->   0.25
 moetfl_expert_network    -->   MLP
-moetfl_expert_size       -->   1
-moetfl_expert_topk       -->   1
+moetfl_expert_size       -->   13
+moetfl_expert_topk       -->   3
 moetfl_network           -->   ABMIL-MoE
 moetfl_noise_gates       -->   False
 moetfl_num_cls           -->   32
@@ -48,8 +48,8 @@ opt_name                 -->   adamW
 opt_weight_decay         -->   1e-05
 path_cluster             -->   None
 path_coord               -->   None
-path_patch               -->   A:/sample_data/features
-path_table               -->   A:/sample_data/labels/tcga_chol_survival.csv
+path_patch               -->   F:/TEMP/thym/TCGA_thym
+path_table               -->   F:/TEMP/thym/CSV/tcga_thym_survival.csv
 save_path                -->   ./result/project-moe-pkt/TFL-MoE-abmil_gat_attn-MLE_YEAR
 save_prediction          -->   True
 seed                     -->   42
@@ -58,14 +58,14 @@ test                     -->   False
 time_bins                -->   32
 time_event_max           -->   11680
 time_format              -->   interval
-transfer_feat_idx        -->   None
-transfer_feat_type       -->   ['all_tf']
+transfer_feat_idx        -->   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+transfer_feat_type       -->   all_tf
 transfer_fine_tuning     -->   False
 transfer_learning        -->   True
-transfer_load_ckpt_path  -->   None
-transfer_path_feat       -->   A:/sample_data/transfer_features
-transfer_path_self_feat  -->   A:/sample_data/transfer_features
-transfer_self_feat       -->   True
+transfer_load_ckpt_path  -->   A:/CROPKT/saved_experts_fold0
+transfer_path_feat       -->   A:/CROPKT/transfer_features_1/target_thym/source_all-fold_0
+transfer_path_self_feat  -->   None
+transfer_self_feat       -->   False
 transfer_source_dataset  -->   all
 transfer_source_fold     -->   0
 transfer_with_patch_feat -->   True

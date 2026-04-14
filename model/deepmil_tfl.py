@@ -191,6 +191,7 @@ class DeepMIL_TFL_MoE(nn.Module):
         X: initial bag features, with shape B x K x C
            where B = 1 for batch size, K is the instance size of this bag, and C is feature dimension.
         """
+        print(f"\n[DEBUG LỖI] Số não chuyên gia (n_experts): {self.n_experts} | Số data chuyên gia (X_tfl.shape[1]): {X_tfl.shape[1]}\n")
         assert self.n_experts == X_tfl.shape[1]
 
         # pass forward a MIL-based router

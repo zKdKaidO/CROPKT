@@ -171,7 +171,7 @@ class WSIPatchSurv_Transfer(WSIPatchSurv):
             self.self_transfer_feat_path = None
 
     def get_transfer_feat_read_path(self, pid):
-        return osp.join(self.transfer_feat_path, pid + '.' + self.read_format)
+        return osp.join(self.transfer_feat_path, pid + '.pt')
 
     def get_self_transfer_feat_read_path(self, pid):
         return osp.join(self.self_transfer_feat_path, pid + '.' + self.read_format)

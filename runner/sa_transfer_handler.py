@@ -1,7 +1,6 @@
 import os.path as osp
 import torch
 import wandb
-import numpy as np
 
 from .sa_handler import SAHandler
 from model.deepmil_tfl import DeepMIL_TFL_MoE
@@ -27,14 +26,6 @@ class SATransferHandler(SAHandler):
         # LR scheduler, evaluator, and evaluation metrics with
         # the functions written to override those base ones. 
         super().__init__(cfg)
-        # --- THÊM VÀO ---
-        # Hàm Loss cho Domain Discriminator (Phân loại Source/Target)
-        self.domain_criterion = torch.nn.BCEWithLogitsLoss()
-        # ----------------
-    
-    # Hàm tính giá trị lambda (alpha) dựa trên tiến độ huấn luyện (p đi từ 0 đến 1)
-    def get_dynamic_lambda(self, p):
-        return 2.0 / (1.0 + np.exp(-10 * p)) - 1.0
 
     @staticmethod
     def func_load_model(cfg):
@@ -57,9 +48,6 @@ class SATransferHandler(SAHandler):
     def save_prediction_results(self, data_cltor, path_to_save, **kws):
         save_prediction_surv(data_cltor['uid'], data_cltor['y'], data_cltor['y_hat'], path_to_save, **kws)
 
-    """
-    hàm quyết định xem đợt huấn luyện này sẽ dùng mạng MoE phức tạp hay mạng bình thường
-    """
     def _update_network(self, xs, ys):
         """
         Update network using one batch data
@@ -69,17 +57,10 @@ class SATransferHandler(SAHandler):
         else:
             val_loss, val_preds = self._update_normal_network(xs, ys)
         return val_loss, val_preds
-    """
-    luồng train tiêu chuẩn của PyTorch
-    1. Duyệt qua Batch: for i in range(n_sample):
-    2. Cho dữ liệu qua Model: pred = self.net(...) -> Lấy dự đoán
-    3. Xóa Gradient cũ: self.optimizer.zero_grad()
-    4. Tính Loss Tiên lượng: pred_loss = self.calc_objective_loss(bag_preds, bag_label)
-    5. Lan truyền ngược & Cập nhật: pred_loss.backward() và self.optimizer.step()
-    """
+
     def _update_normal_network(self, xs, ys):
         n_sample = len(xs)
-        all_raw_pred = []
+        y_hat = []
 
         for i in range(n_sample):
             X, ext_data = xs[i]
@@ -89,13 +70,13 @@ class SATransferHandler(SAHandler):
             else:
                 X = X.cuda()
                 pred = self.net(X)
-            all_raw_pred.append(pred)
+            y_hat.append(pred)
 
         # 3.1 zero gradients buffer
         self.optimizer.zero_grad()
 
         # 3.2 loss
-        bag_preds = torch.cat(all_raw_pred, dim=0) # [B, num_cls]
+        bag_preds = torch.cat(y_hat, dim=0) # [B, num_cls]
         bag_label = torch.cat(ys, dim=0) # [B, 2]
         pred_loss = self.calc_objective_loss(bag_preds, bag_label)
 
@@ -111,42 +92,33 @@ class SATransferHandler(SAHandler):
 
         val_preds = bag_preds.detach().cpu()
         return val_loss, val_preds
-    """
-    Hàm đc gọi khi model là DeepMIL_TFL_MoE
 
-    """
     def _update_moe_network(self, xs, ys):
         n_sample = len(xs)
         y_hat = []
         batch_router_scores = torch.zeros(self.net.n_experts)
         balance_loss, router_z_loss = .0, .0
-        all_domain_preds = [] # MỚI THÊM: Mảng chứa dự đoán của cảnh sát
-        all_domain_targets = [] # MỚI: Tạo mảng chứa nhãn miền THẬT
 
         for i in range(n_sample):
-            # --- [SỬA ĐOẠN NÀY] ---
-            # xs[i] bây giờ trả về: (transfer_feat, (original_feats, domain_label))
-            X, (original_feats, domain_label) = xs[i] 
-            # Lưu nhãn miền thật lại để tí nữa tính Loss
-            all_domain_targets.append(domain_label)
-            # ----------------------
-            # có 2 nguồn dữ liệu:
-            # - patch features (dữ liệu thực tế): hàng nghìn mảnh ảnh nhỏ cắt ra từ bệnh nhân 
-            # - transfer features (kiến thức vay mượn): những đặc trưng đã đc experts đúc rút sẵn từ các loại ung thư khác
-            if self.transfer_with_patch_feat: # nhìn vào ảnh để biết khó/dễ, từ đó quyết định hỏi chuyên gia nào cho đúng 
+            X, ext_data = xs[i]
+            if isinstance(ext_data, list):
+                for i, t in enumerate(ext_data):
+                    if t.shape != ext_data[0].shape:
+                        print(f"[CẢNH BÁO LỚN] Chuyên gia {i} bị sai kích thước: {t.shape} (đáng lẽ phải là {ext_data[0].shape})")
+                ext_data_tensor = torch.stack(ext_data, dim=1).cuda() 
+            else:
+                ext_data_tensor = ext_data.cuda()
+
+            if self.transfer_with_patch_feat:
                 X = X.cuda()
-                # Chỉ đưa original_feats vào model (không đưa domain_label vào đây gây lỗi)
-                pred, router_scores, cur_balance_loss, cur_router_z_loss, domain_preds = self.net(X, original_feats.cuda())
+                pred, router_scores, cur_balance_loss, cur_router_z_loss = self.net(X, ext_data.cuda())
             else:
                 X = X.cuda()
-                pred, router_scores, cur_balance_loss, cur_router_z_loss, domain_preds = self.net(X)
-            
-            all_domain_preds.append(domain_preds) # MỚI THÊM: Gom kết quả lại
-
-            y_hat.append(pred) # Lưu dự đoán sống/chết
-            batch_router_scores += router_scores.cpu().squeeze(0) # Lưu điểm Router để log
-            balance_loss += cur_balance_loss # Cộng dồn Loss phụ 1
-            router_z_loss += cur_router_z_loss # Cộng dồn Loss phụ 2
+                pred, router_scores, cur_balance_loss, cur_router_z_loss = self.net(X)
+            y_hat.append(pred)
+            batch_router_scores += router_scores.cpu().squeeze(0)
+            balance_loss += cur_balance_loss
+            router_z_loss += cur_router_z_loss
 
         # 3.1 zero gradients buffer
         self.optimizer.zero_grad()
@@ -162,31 +134,7 @@ class SATransferHandler(SAHandler):
         wandb.log({'train/aux_balance_loss': balance_loss.item() / n_sample})
         wandb.log({'train/aux_router_z_loss': router_z_loss.item() / n_sample})
         wandb.log({'train/aux_loss': aux_loss.item()})
-
-        # --- BẮT ĐẦU PHẦN DOMAIN ADAPTATION ---
-        bag_domain_preds = torch.cat(all_domain_preds, dim=0) # xếp chồng thành 1 cột dọc
-        
-        # TẠO NHÃN MIỀN (DOMAIN LABELS):
-        # GIẢ ĐỊNH TẠM THỜI: Toàn bộ batch này là Source (Nhãn 1)
-        # (Sau này khi DataLoader trộn 2 miền, bạn sẽ lấy nhãn thật từ data)
-        target_domain = torch.cat(all_domain_targets, dim=0).to(bag_domain_preds.device)
-        
-        # Tính Domain Loss (L_d)
-        # BCE: Ld = - [y.log(y_hat) + (1-y).log(1-y_hat)]
-        # y_hat: xác suất mà cảnh sát đoán; y: nhãn thật
-        domain_loss = self.domain_criterion(bag_domain_preds, target_domain)
-        
-        # Tính Lambda (Lịch trình thích nghi)
-        # Giả lập tham số tiến độ p (cần lấy số epoch hiện tại, tạm để 0.5 để chạy thử)
-        p = 0.5 
-        alpha = self.get_dynamic_lambda(p)
-        
-        # Log Domain Loss lên Wandb để theo dõi
-        wandb.log({'train/domain_loss': domain_loss.item(), 'train/lambda_alpha': alpha})
-        
-        # TỔNG HỢP LOSS (Đã cộng cả Cảnh sát vào)
-        pred_loss = pred_loss + aux_loss + (alpha * domain_loss)
-        # --------------------------------------
+        pred_loss += aux_loss
 
         # 3.3 backward gradients and update networks
         if isinstance(pred_loss, torch.Tensor) and pred_loss.requires_grad:

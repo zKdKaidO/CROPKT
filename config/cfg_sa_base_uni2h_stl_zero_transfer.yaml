@@ -83,8 +83,8 @@ test: True
 test_wandb_prj: Project-Zero-Transfer 
 test_save_path: A:/CROPKT/test_results_1/zero_transfer 
 test_split: test 
-test_source_dataset_name: ['gbmlgg', 'hnsc', 'kipan', 'lihc', 'lung', 'sarc', 'skcm', 'stes', 'ucec'] # Các model pre-trained từ bệnh này
-test_source_data_split_fold: [0, 1, 2, 3, 4]
+test_source_dataset_name: ['blca', 'brca', 'cesc', 'coadread',  ,'gbmlgg', 'hnsc', 'kipan', 'lihc', 'lung', 'sarc', 'skcm', 'stes', 'ucec'] # Các model pre-trained từ bệnh này
+test_source_data_split_fold: [0]
 test_load_ckpt_path: A:/CROPKT/saved_experts/{source_dataset}_expert-data_tcga_{source_dataset}-fold_{source_fold}
 test_save_wsi_representation: True
 test_save_wsi_representation_path: A:/CROPKT/transfer_features_1/target_{dataset}/source_{source_dataset}-fold_{source_fold}
