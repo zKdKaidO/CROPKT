@@ -121,7 +121,7 @@ class DeepMIL_TFL_MoE(nn.Module):
         # MIL network employs as Router
         self.feat_proj = create_mlp(
             in_dim=dim_in,
-            hid_dims=[dim_emb] * (num_feat_proj_layers - 1),
+            hid_dims=[dim_emb] * (num_feat_proj_layers - 1), # num_feat_proj_layers = 0 -> hid_dims = [] (empty list)
             dropout=drop_rate,
             out_dim=dim_emb,
             end_with_fc=False

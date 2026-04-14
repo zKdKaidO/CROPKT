@@ -6,6 +6,7 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+result/
 env_cropkt/
 saved_experts/
 test_results/

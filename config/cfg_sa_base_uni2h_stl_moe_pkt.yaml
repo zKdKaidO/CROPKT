@@ -11,7 +11,7 @@ eval_training_loader_per_epoch: False
 ckpt_for_eval: last # last / best
 
 # data loading
-dataset_name: 'thym'
+dataset_name: 'meso'
 path_patch: F:/TEMP/{dataset}/TCGA_{dataset}
 path_coord: null
 path_table: F:/TEMP/{dataset}/CSV/tcga_{dataset}_survival.csv
@@ -28,8 +28,8 @@ data_split_fold: 0
 transfer_learning: True
 transfer_with_patch_feat: True
 transfer_fine_tuning: False # if True, load the weight of `pred_head` of source models from `transfer_load_ckpt_path`
-transfer_load_ckpt_path: A:/CROPKT/saved_experts_fold0 # path to load trained models
-transfer_path_feat: A:/CROPKT/transfer_features_1/target_{dataset}/source_all-fold_0
+transfer_load_ckpt_path: A:/CROPKT/result/saved_experts_fold0 # path to load trained models
+transfer_path_feat: A:/CROPKT/result/transfer_features_rare_turmor/target_{dataset}/source_all-fold_0
 transfer_feat_type: "all_tf" # ['pos_tf', 'all_tf']
 transfer_source_fold: 0
 transfer_self_feat: False

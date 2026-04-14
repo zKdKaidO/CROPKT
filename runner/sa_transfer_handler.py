@@ -18,7 +18,7 @@ class SATransferHandler(SAHandler):
     def __init__(self, cfg):
         assert 'transfer_learning' in cfg and cfg['transfer_learning'] is True
 
-        # two important settings for transfer learning
+        # two important settings for transfer learning (bool)
         self.transfer_with_patch_feat = cfg['transfer_with_patch_feat']
         self.transfer_fine_tuning = cfg['transfer_fine_tuning']
 
@@ -30,7 +30,11 @@ class SATransferHandler(SAHandler):
     @staticmethod
     def func_load_model(cfg):
         arch = cfg['arch']
-        arch_cfg = fetch_kws(cfg, prefix=arch.lower())
+        arch_cfg = fetch_kws(cfg, prefix=arch.lower()) # save DeepMIL settings in config in dict
+        # Example: arch_cfg = {
+        # "network": ABMIL-MoE
+        # "dim_in": 1536
+        # } 
         model = load_model(cfg['arch'], **arch_cfg)
         if cfg['init_wt']:
             model.apply(general_init_weight)

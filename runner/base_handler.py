@@ -31,6 +31,7 @@ class BaseHandler(object):
     This class handles the initialization, training, and 
     testing of general WSI representation learning models.
     """
+    # setup GPU,...
     def __init__(self, cfg):
         setup_device(cfg['cuda_id'])
         seed_everything(cfg['seed'])
@@ -108,7 +109,7 @@ class BaseHandler(object):
         pass
         print("[setup] finished argument checking.")
 
-    # đọc file CSV để lấy danh sách ID chia theo tập train/val/test
+    # đọc file CSV để lấy danh sách ID chia theo tập train/val/test (splits_fold)
     @staticmethod
     def func_load_data_split(cfg, key=None, **kws):
         if key is None:
@@ -124,6 +125,7 @@ class BaseHandler(object):
         print('[exec] finished loading data splits from {}'.format(path_split))
         return data_split
 
+    # ko co' gi'
     @staticmethod
     def func_load_meta_data(cfg, data_split=None, **kws):
         print("[setup] there is no meta data to load.")
@@ -204,28 +206,31 @@ class BaseHandler(object):
     def save_prediction_results(self, data_cltor, path_to_save, **kws):
         save_prediction_clf(data_cltor['uid'], data_cltor['y'], data_cltor['y_hat'], path_to_save, **kws)
 
+    # based on patient ID from splits, 
     def exec(self):
         print('[exec] with task = {}, arch = {}.'.format(self.cfg['task'], self.cfg['arch']))
 
-        collate_func = default_collate
+        collate_func = default_collate # gom thành batch
 
-        # Prepare datasets 
+        # Prepare datasets (lấy danh sách patient từ train)
         pids_train = self.data_split['train']
         train_set  = self.func_prepare_dataset(pids_train, 'train', self.cfg, self.data_meta)
-        self.uid.update({'train': train_set.uid})
+        self.uid.update({'train': train_set.uid}) # lưu id patient
         assert len(pids_train) == len(train_set.uid), "Failed to load all training samples specified in data split."
+
         train_loader = DataLoader(train_set, batch_size=self.cfg['batch_size'], 
             generator=seed_generator(self.cfg['seed']), num_workers=self.cfg['num_workers'], 
             shuffle=True, worker_init_fn=seed_worker, collate_fn=collate_func
-        )
+        ) # học 
 
+        # làm tương tự với tệp val & test
         pids_test  = self.data_split['test']
         test_set   = self.func_prepare_dataset(pids_test, 'test', self.cfg, self.data_meta)
         self.uid.update({'test': test_set.uid})
         test_loader = DataLoader(test_set, batch_size=self.cfg['batch_size'], 
             generator=seed_generator(self.cfg['seed']), num_workers=self.cfg['num_workers'], 
             shuffle=False, worker_init_fn=seed_worker, collate_fn=collate_func
-        )
+        ) 
 
         # if the split contains a validation splitting 
         if 'validation' in self.data_split:
@@ -239,7 +244,7 @@ class BaseHandler(object):
         else:
             val_set    = None 
             val_loader = None
-
+        
         run_name = 'train'
         # start training
         if 'force_to_skip_training' in self.cfg and self.cfg['force_to_skip_training']:

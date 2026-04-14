@@ -1,7 +1,8 @@
+# Dùng để gom tất cả những fold 0 của tất cả bệnh nguồn tfl cho 1 bệnh đích
 import os
 import torch
 
-base_path = r"A:\CROPKT\transfer_features_1"
+base_path = r"A:\CROPKT\result\transfer_features_rare_turmor"
 
 target_dirs = [d for d in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, d)) and d.startswith("target_")]
 

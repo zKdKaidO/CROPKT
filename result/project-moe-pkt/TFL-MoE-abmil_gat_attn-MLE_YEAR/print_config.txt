@@ -6,8 +6,8 @@ ckpt_for_eval            -->   last
 cuda_id                  -->   0
 data_mode                -->   patch
 data_split_fold          -->   0
-data_split_path          -->   F:\TEMP\thym\CSV\splits_0.csv
-dataset_name             -->   thym
+data_split_path          -->   F:\TEMP\meso\CSV\splits_0.csv
+dataset_name             -->   meso
 epochs                   -->   20
 es                       -->   False
 es_patience              -->   20
@@ -48,8 +48,8 @@ opt_name                 -->   adamW
 opt_weight_decay         -->   1e-05
 path_cluster             -->   None
 path_coord               -->   None
-path_patch               -->   F:/TEMP/thym/TCGA_thym
-path_table               -->   F:/TEMP/thym/CSV/tcga_thym_survival.csv
+path_patch               -->   F:/TEMP/meso/TCGA_meso
+path_table               -->   F:/TEMP/meso/CSV/tcga_meso_survival.csv
 save_path                -->   ./result/project-moe-pkt/TFL-MoE-abmil_gat_attn-MLE_YEAR
 save_prediction          -->   True
 seed                     -->   42
@@ -62,8 +62,8 @@ transfer_feat_idx        -->   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 transfer_feat_type       -->   all_tf
 transfer_fine_tuning     -->   False
 transfer_learning        -->   True
-transfer_load_ckpt_path  -->   A:/CROPKT/saved_experts_fold0
-transfer_path_feat       -->   A:/CROPKT/transfer_features_1/target_thym/source_all-fold_0
+transfer_load_ckpt_path  -->   A:/CROPKT/result/saved_experts_fold0
+transfer_path_feat       -->   A:/CROPKT/result/transfer_features_rare_turmor/target_meso/source_all-fold_0
 transfer_path_self_feat  -->   None
 transfer_self_feat       -->   False
 transfer_source_dataset  -->   all
